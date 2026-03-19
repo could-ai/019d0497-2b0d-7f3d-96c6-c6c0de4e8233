@@ -1,123 +1,226 @@
 import 'package:flutter/material.dart';
+import 'circuit_simulator.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const VWBeetleWiringApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class VWBeetleWiringApp extends StatelessWidget {
+  const VWBeetleWiringApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: '1960 VW Beetle Wiring Simulator',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF1E1E1E),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueGrey,
+          brightness: Brightness.dark,
+        ),
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const MyHomePage(title: 'Flutter Demo Home Page'),
+        '/': (context) => const MainSimulatorScreen(),
       },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MainSimulatorScreen extends StatefulWidget {
+  const MainSimulatorScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainSimulatorScreen> createState() => _MainSimulatorScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
+  // Circuit States
+  bool isBatteryConnected = true;
+  int ignitionState = 0; // 0: Off, 1: On, 2: Start
+  bool isLightSwitchOn = false;
+  bool isEngineRunning = false;
 
-  void _incrementCounter() {
+  void _toggleBattery() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      isBatteryConnected = !isBatteryConnected;
+      if (!isBatteryConnected) {
+        ignitionState = 0;
+        isLightSwitchOn = false;
+        isEngineRunning = false;
+      }
+    });
+  }
+
+  void _cycleIgnition() {
+    if (!isBatteryConnected) return;
+    setState(() {
+      ignitionState = (ignitionState + 1) % 3;
+      if (ignitionState == 2) {
+        // Cranking
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted && ignitionState == 2) {
+            setState(() {
+              ignitionState = 1; // Return to 'On'
+              isEngineRunning = true;
+            });
+          }
+        });
+      } else if (ignitionState == 0) {
+        isEngineRunning = false;
+      }
+    });
+  }
+
+  void _toggleLights() {
+    if (!isBatteryConnected) return;
+    setState(() {
+      isLightSwitchOn = !isLightSwitchOn;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('1960 VW Beetle Wiring Simulator (6V)'),
+        backgroundColor: const Color(0xFF2D2D30),
+        elevation: 0,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text('$_counter', style: Theme.of(context).textTheme.headlineMedium),
-          ],
-        ),
+      body: Row(
+        children: [
+          // Control Panel
+          Container(
+            width: 300,
+            color: const Color(0xFF252526),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Controls',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                _buildSwitch(
+                  'Battery Disconnect',
+                  isBatteryConnected,
+                  _toggleBattery,
+                  activeColor: Colors.green,
+                ),
+                const Divider(),
+                _buildIgnitionControl(),
+                const Divider(),
+                _buildSwitch(
+                  'Headlight Switch',
+                  isLightSwitchOn,
+                  _toggleLights,
+                  activeColor: Colors.blue,
+                ),
+                const Spacer(),
+                _buildStatusPanel(),
+              ],
+            ),
+          ),
+          // Interactive Schematic
+          Expanded(
+            child: CircuitSimulator(
+              isBatteryConnected: isBatteryConnected,
+              ignitionState: ignitionState,
+              isLightSwitchOn: isLightSwitchOn,
+              isEngineRunning: isEngineRunning,
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+
+  Widget _buildSwitch(String label, bool value, VoidCallback onChanged, {Color? activeColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          Switch(
+            value: value,
+            onChanged: (val) => onChanged(),
+            activeColor: activeColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIgnitionControl() {
+    String stateText = 'OFF';
+    Color stateColor = Colors.grey;
+    if (ignitionState == 1) {
+      stateText = 'ON';
+      stateColor = Colors.orange;
+    } else if (ignitionState == 2) {
+      stateText = 'START';
+      stateColor = Colors.red;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Ignition Switch (Term 30/15/50)', style: TextStyle(fontSize: 16)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: isBatteryConnected ? _cycleIgnition : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: stateColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text('Turn Key: $stateText'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusPanel() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade800),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('System Status', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          _statusRow('System Voltage', isBatteryConnected ? (isEngineRunning ? '7.2V (Charging)' : '6.1V') : '0.0V'),
+          _statusRow('Engine', isEngineRunning ? 'Running' : (ignitionState == 2 ? 'Cranking...' : 'Stopped')),
+          _statusRow('Generator', isEngineRunning ? 'Generating' : 'Inactive'),
+          _statusRow('Headlights', isLightSwitchOn && isBatteryConnected ? 'ON' : 'OFF'),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: Colors.grey.shade400)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
+      ),
     );
   }
 }
