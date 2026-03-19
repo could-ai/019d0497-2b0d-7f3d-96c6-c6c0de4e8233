@@ -215,7 +215,7 @@ class SchematicPainter extends CustomPainter {
 
   Path _createDashedPath(Path source, double dashLength, double dashSpace, double phase) {
     final Path dest = Path();
-    for (final PathMetric metric in source.computeMetrics()) {
+    for (final ui.PathMetric metric in source.computeMetrics()) {
       double distance = phase % (dashLength + dashSpace);
       if (distance > 0) {
         distance -= (dashLength + dashSpace);
