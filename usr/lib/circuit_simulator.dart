@@ -7,6 +7,9 @@ class CircuitSimulator extends StatefulWidget {
   final int ignitionState; // 0: Off, 1: On, 2: Start
   final bool isLightSwitchOn;
   final bool isEngineRunning;
+  final int turnSignalState; // 0: Off, 1: Left, 2: Right
+  final bool isHazardOn;
+  final Function(String) onComponentTap;
 
   const CircuitSimulator({
     super.key,
@@ -14,6 +17,9 @@ class CircuitSimulator extends StatefulWidget {
     required this.ignitionState,
     required this.isLightSwitchOn,
     required this.isEngineRunning,
+    required this.turnSignalState,
+    required this.isHazardOn,
+    required this.onComponentTap,
   });
 
   @override
@@ -48,28 +54,68 @@ class _CircuitSimulatorState extends State<CircuitSimulator> with SingleTickerPr
     super.dispose();
   }
 
+  void _handleTap(TapDownDetails details) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final localPosition = renderBox.globalToLocal(details.globalPosition);
+    final transformedPosition = _transformationController.toScene(localPosition);
+
+    // Define component positions (matching SchematicPainter)
+    final components = {
+      'Battery': const Offset(100, 400),
+      'Ground': const Offset(100, 500),
+      'Starter': const Offset(300, 550),
+      'Regulator': const Offset(300, 250),
+      'Generator': const Offset(300, 100),
+      'IgnitionSwitch': const Offset(500, 400),
+      'LightSwitch': const Offset(500, 600),
+      'FuseBox': const Offset(700, 600),
+      'Coil': const Offset(700, 400),
+      'Distributor': const Offset(900, 400),
+      'SparkPlugs': const Offset(1100, 400),
+      'Headlights': const Offset(900, 550),
+      'Taillights': const Offset(900, 650),
+      'TurnSignalRelay': const Offset(700, 700),
+      'TurnSignalSwitch': const Offset(500, 700),
+      'LeftTurnSignals': const Offset(1100, 550),
+      'RightTurnSignals': const Offset(1100, 650),
+    };
+
+    for (final entry in components.entries) {
+      final rect = Rect.fromCenter(center: entry.value, width: 120, height: 60);
+      if (rect.contains(transformedPosition)) {
+        widget.onComponentTap(entry.key);
+        break;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: InteractiveViewer(
-        transformationController: _transformationController,
-        boundaryMargin: const EdgeInsets.all(1000),
-        minScale: 0.1,
-        maxScale: 4.0,
-        child: AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return CustomPaint(
-              size: const Size(2000, 2000),
-              painter: SchematicPainter(
-                animationValue: _animationController.value,
-                isBatteryConnected: widget.isBatteryConnected,
-                ignitionState: widget.ignitionState,
-                isLightSwitchOn: widget.isLightSwitchOn,
-                isEngineRunning: widget.isEngineRunning,
-              ),
-            );
-          },
+    return GestureDetector(
+      onTapDown: _handleTap,
+      child: ClipRect(
+        child: InteractiveViewer(
+          transformationController: _transformationController,
+          boundaryMargin: const EdgeInsets.all(1000),
+          minScale: 0.1,
+          maxScale: 4.0,
+          child: AnimatedBuilder(
+            animation: _animationController,
+            builder: (context, child) {
+              return CustomPaint(
+                size: const Size(2000, 2000),
+                painter: SchematicPainter(
+                  animationValue: _animationController.value,
+                  isBatteryConnected: widget.isBatteryConnected,
+                  ignitionState: widget.ignitionState,
+                  isLightSwitchOn: widget.isLightSwitchOn,
+                  isEngineRunning: widget.isEngineRunning,
+                  turnSignalState: widget.turnSignalState,
+                  isHazardOn: widget.isHazardOn,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -82,6 +128,8 @@ class SchematicPainter extends CustomPainter {
   final int ignitionState;
   final bool isLightSwitchOn;
   final bool isEngineRunning;
+  final int turnSignalState;
+  final bool isHazardOn;
 
   SchematicPainter({
     required this.animationValue,
@@ -89,25 +137,31 @@ class SchematicPainter extends CustomPainter {
     required this.ignitionState,
     required this.isLightSwitchOn,
     required this.isEngineRunning,
+    required this.turnSignalState,
+    required this.isHazardOn,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     // Define Nodes (Components)
     final nodes = {
-      'Battery': _Node(const Offset(100, 400), '6V Battery', Colors.red.shade900),
+      'Battery': _Node(const Offset(100, 400), '12V Battery\n(Converted)', Colors.red.shade900),
       'Ground': _Node(const Offset(100, 500), 'Chassis Ground', Colors.grey.shade800),
-      'Starter': _Node(const Offset(300, 550), 'Starter Motor\n(Term 30/50)', Colors.grey.shade700),
+      'Starter': _Node(const Offset(300, 550), 'Starter Motor\n(12V)', Colors.grey.shade700),
       'Regulator': _Node(const Offset(300, 250), 'Voltage Regulator', Colors.blueGrey),
-      'Generator': _Node(const Offset(300, 100), 'Generator', Colors.blueGrey.shade700),
+      'Generator': _Node(const Offset(300, 100), 'Alternator\n(12V/55A)', Colors.blueGrey.shade700),
       'IgnitionSwitch': _Node(const Offset(500, 400), 'Ignition Switch\n(Term 30/15/50)', Colors.orange.shade800),
       'LightSwitch': _Node(const Offset(500, 600), 'Light Switch\n(Term 30/56)', Colors.blue.shade800),
       'FuseBox': _Node(const Offset(700, 600), 'Fuse Box', Colors.teal.shade700),
-      'Coil': _Node(const Offset(700, 400), 'Ignition Coil\n(Term 15/1)', Colors.purple.shade800),
+      'Coil': _Node(const Offset(700, 400), 'Ignition Coil\n(12V Dual Port)', Colors.purple.shade800),
       'Distributor': _Node(const Offset(900, 400), 'Distributor', Colors.brown.shade700),
-      'SparkPlugs': _Node(const Offset(1100, 400), 'Spark Plugs (1-4)', Colors.amber.shade800),
-      'Headlights': _Node(const Offset(900, 550), 'Headlights', Colors.yellow.shade700),
-      'Taillights': _Node(const Offset(900, 650), 'Taillights', Colors.red.shade600),
+      'SparkPlugs': _Node(const Offset(1100, 400), 'Spark Plugs\n(1600cc 4-Cyl)', Colors.amber.shade800),
+      'Headlights': _Node(const Offset(900, 550), 'Headlights\n(12V)', Colors.yellow.shade700),
+      'Taillights': _Node(const Offset(900, 650), 'Taillights\n(12V)', Colors.red.shade600),
+      'TurnSignalRelay': _Node(const Offset(700, 700), 'Turn Signal\nFlasher Relay', Colors.pink.shade700),
+      'TurnSignalSwitch': _Node(const Offset(500, 700), 'Turn Signal\nSwitch', Colors.cyan.shade700),
+      'LeftTurnSignals': _Node(const Offset(1100, 550), 'Left Turn\nSignals', Colors.orange.shade600),
+      'RightTurnSignals': _Node(const Offset(1100, 650), 'Right Turn\nSignals', Colors.orange.shade600),
     };
 
     // Determine Circuit Logic (Electricity Flow)
@@ -116,8 +170,11 @@ class SchematicPainter extends CustomPainter {
     bool term15Power = term30Power && (ignitionState == 1 || ignitionState == 2); // Ignition ON or START
     bool term50Power = term30Power && ignitionState == 2; // START only
     bool lightsPower = term30Power && isLightSwitchOn;
-    bool chargingPower = isEngineRunning; // Generator producing power
+    bool chargingPower = isEngineRunning; // Alternator producing power
     bool sparkPower = term15Power && (isEngineRunning || ignitionState == 2);
+    bool turnSignalPower = term30Power && (turnSignalState != 0 || isHazardOn);
+    bool leftSignalFlow = turnSignalPower && (turnSignalState == 1 || isHazardOn);
+    bool rightSignalFlow = turnSignalPower && (turnSignalState == 2 || isHazardOn);
 
     // Define Wires
     final wires = [
@@ -128,6 +185,7 @@ class SchematicPainter extends CustomPainter {
       _Wire('Battery', 'Starter', term30Power, term30Power, Colors.red, thickness: 6.0),
       _Wire('Starter', 'IgnitionSwitch', term30Power, term30Power, Colors.red),
       _Wire('Starter', 'LightSwitch', term30Power, term30Power, Colors.red),
+      _Wire('Starter', 'TurnSignalSwitch', term30Power, term30Power, Colors.red),
       _Wire('Battery', 'Regulator', term30Power, chargingPower, Colors.red), // B+
       
       // Charging System
@@ -144,6 +202,11 @@ class SchematicPainter extends CustomPainter {
       _Wire('LightSwitch', 'FuseBox', lightsPower, lightsPower, Colors.grey.shade300),
       _Wire('FuseBox', 'Headlights', lightsPower, lightsPower, Colors.yellow),
       _Wire('FuseBox', 'Taillights', lightsPower, lightsPower, Colors.grey),
+      
+      // Turn Signal System
+      _Wire('TurnSignalSwitch', 'TurnSignalRelay', turnSignalPower, turnSignalPower, Colors.purple.shade300),
+      _Wire('TurnSignalRelay', 'LeftTurnSignals', leftSignalFlow, leftSignalFlow, Colors.orange, isFlashing: true),
+      _Wire('TurnSignalRelay', 'RightTurnSignals', rightSignalFlow, rightSignalFlow, Colors.orange, isFlashing: true),
     ];
 
     // Draw Wires
@@ -172,6 +235,14 @@ class SchematicPainter extends CustomPainter {
     if (lightsPower) {
       _drawLightEffect(canvas, nodes['Headlights']!.position, Colors.yellow);
       _drawLightEffect(canvas, nodes['Taillights']!.position, Colors.red);
+    }
+
+    // Draw Turn Signal Flashing
+    if (leftSignalFlow) {
+      _drawFlashEffect(canvas, nodes['LeftTurnSignals']!.position, Colors.orange);
+    }
+    if (rightSignalFlow) {
+      _drawFlashEffect(canvas, nodes['RightTurnSignals']!.position, Colors.orange);
     }
   }
 
@@ -210,6 +281,18 @@ class SchematicPainter extends CustomPainter {
       // Create dashed path for animation
       final dashPath = _createDashedPath(path, 15.0, 15.0, animValue * 30.0);
       canvas.drawPath(dashPath, flowPaint);
+    }
+
+    // Draw flashing animation for turn signals
+    if (wire.isFlashing && wire.isFlowing) {
+      final flashOpacity = sin(animValue * pi * 4) > 0 ? 1.0 : 0.0; // Flash at 2Hz
+      final flashPaint = Paint()
+        ..color = wire.color.withOpacity(flashOpacity)
+        ..strokeWidth = wire.thickness * 1.2
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawPath(path, flashPaint);
     }
   }
 
@@ -256,7 +339,7 @@ class SchematicPainter extends CustomPainter {
       text: node.label,
       style: const TextStyle(
         color: Colors.white,
-        fontSize: 12,
+        fontSize: 10,
         fontWeight: FontWeight.bold,
       ),
     );
@@ -295,13 +378,25 @@ class SchematicPainter extends CustomPainter {
     canvas.drawCircle(position + const Offset(70, 0), 10, innerPaint);
   }
 
+  void _drawFlashEffect(Canvas canvas, Offset position, Color color) {
+    final flashOpacity = sin(animationValue * pi * 4) > 0 ? 0.8 : 0.0;
+    final paint = Paint()
+      ..color = color.withOpacity(flashOpacity)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+
+    canvas.drawCircle(position + const Offset(70, 0), 25, paint);
+  }
+
   @override
   bool shouldRepaint(covariant SchematicPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue ||
            oldDelegate.isBatteryConnected != isBatteryConnected ||
            oldDelegate.ignitionState != ignitionState ||
            oldDelegate.isLightSwitchOn != isLightSwitchOn ||
-           oldDelegate.isEngineRunning != isEngineRunning;
+           oldDelegate.isEngineRunning != isEngineRunning ||
+           oldDelegate.turnSignalState != turnSignalState ||
+           oldDelegate.isHazardOn != isHazardOn;
   }
 }
 
@@ -322,6 +417,7 @@ class _Wire {
   final double thickness;
   final Offset offset;
   final bool isSpark;
+  final bool isFlashing;
 
   _Wire(
     this.from,
@@ -332,5 +428,6 @@ class _Wire {
     this.thickness = 3.0,
     this.offset = Offset.zero,
     this.isSpark = false,
+    this.isFlashing = false,
   });
 }
