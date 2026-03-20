@@ -9,6 +9,8 @@ class CircuitSimulator extends StatefulWidget {
   final bool isEngineRunning;
   final int turnSignalState; // 0: Off, 1: Left, 2: Right
   final bool isHazardOn;
+  final bool isParkingLightsOn;
+  final bool isDomeLightOn;
   final Function(String) onComponentTap;
 
   const CircuitSimulator({
@@ -19,6 +21,8 @@ class CircuitSimulator extends StatefulWidget {
     required this.isEngineRunning,
     required this.turnSignalState,
     required this.isHazardOn,
+    required this.isParkingLightsOn,
+    required this.isDomeLightOn,
     required this.onComponentTap,
   });
 
@@ -74,6 +78,10 @@ class _CircuitSimulatorState extends State<CircuitSimulator> with SingleTickerPr
       'SparkPlugs': const Offset(1100, 400),
       'Headlights': const Offset(900, 550),
       'Taillights': const Offset(900, 650),
+      'ParkingLights': const Offset(900, 750),
+      'DomeLight': const Offset(300, 750),
+      'Radio': const Offset(500, 800),
+      'Speaker': const Offset(700, 800),
       'TurnSignalRelay': const Offset(700, 700),
       'TurnSignalSwitch': const Offset(500, 700),
       'LeftTurnSignals': const Offset(1100, 550),
@@ -112,6 +120,8 @@ class _CircuitSimulatorState extends State<CircuitSimulator> with SingleTickerPr
                   isEngineRunning: widget.isEngineRunning,
                   turnSignalState: widget.turnSignalState,
                   isHazardOn: widget.isHazardOn,
+                  isParkingLightsOn: widget.isParkingLightsOn,
+                  isDomeLightOn: widget.isDomeLightOn,
                 ),
               );
             },
@@ -130,6 +140,8 @@ class SchematicPainter extends CustomPainter {
   final bool isEngineRunning;
   final int turnSignalState;
   final bool isHazardOn;
+  final bool isParkingLightsOn;
+  final bool isDomeLightOn;
 
   SchematicPainter({
     required this.animationValue,
@@ -139,10 +151,18 @@ class SchematicPainter extends CustomPainter {
     required this.isEngineRunning,
     required this.turnSignalState,
     required this.isHazardOn,
+    required this.isParkingLightsOn,
+    required this.isDomeLightOn,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Draw background to fix black screen
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = const Color(0xFF1E1E1E),
+    );
+
     // Define Nodes (Components)
     final nodes = {
       'Battery': _Node(const Offset(100, 400), '12V Battery\n(Converted)', Colors.red.shade900),
@@ -158,6 +178,10 @@ class SchematicPainter extends CustomPainter {
       'SparkPlugs': _Node(const Offset(1100, 400), 'Spark Plugs\n(1600cc 4-Cyl)', Colors.amber.shade800),
       'Headlights': _Node(const Offset(900, 550), 'Headlights\n(12V)', Colors.yellow.shade700),
       'Taillights': _Node(const Offset(900, 650), 'Taillights\n(12V)', Colors.red.shade600),
+      'ParkingLights': _Node(const Offset(900, 750), 'Parking Lights\n(12V)', Colors.amber.shade700),
+      'DomeLight': _Node(const Offset(300, 750), 'Dome Light\n(12V)', Colors.white70),
+      'Radio': _Node(const Offset(500, 800), 'Sapphire I Radio', Colors.green.shade800),
+      'Speaker': _Node(const Offset(700, 800), 'Speaker\n(4-ohm)', Colors.grey.shade600),
       'TurnSignalRelay': _Node(const Offset(700, 700), 'Turn Signal\nFlasher Relay', Colors.pink.shade700),
       'TurnSignalSwitch': _Node(const Offset(500, 700), 'Turn Signal\nSwitch', Colors.cyan.shade700),
       'LeftTurnSignals': _Node(const Offset(1100, 550), 'Left Turn\nSignals', Colors.orange.shade600),
@@ -170,8 +194,11 @@ class SchematicPainter extends CustomPainter {
     bool term15Power = term30Power && (ignitionState == 1 || ignitionState == 2); // Ignition ON or START
     bool term50Power = term30Power && ignitionState == 2; // START only
     bool lightsPower = term30Power && isLightSwitchOn;
+    bool parkingPower = term30Power && isParkingLightsOn;
+    bool domePower = term30Power && isDomeLightOn;
     bool chargingPower = isEngineRunning; // Alternator producing power
     bool sparkPower = term15Power && (isEngineRunning || ignitionState == 2);
+    bool radioPower = term15Power; // Radio on when ignition accessory
     bool turnSignalPower = term30Power && (turnSignalState != 0 || isHazardOn);
     bool leftSignalFlow = turnSignalPower && (turnSignalState == 1 || isHazardOn);
     bool rightSignalFlow = turnSignalPower && (turnSignalState == 2 || isHazardOn);
@@ -180,12 +207,17 @@ class SchematicPainter extends CustomPainter {
     final wires = [
       // Ground
       _Wire('Battery', 'Ground', true, false, Colors.black, thickness: 6.0),
+      _Wire('Ground', 'DomeLight', domePower, domePower, Colors.black),
+      _Wire('Ground', 'Radio', radioPower, radioPower, Colors.black),
+      _Wire('Ground', 'Speaker', radioPower, radioPower, Colors.black),
       
       // Main Power (Terminal 30) - Thick Red Wire
       _Wire('Battery', 'Starter', term30Power, term30Power, Colors.red, thickness: 6.0),
       _Wire('Starter', 'IgnitionSwitch', term30Power, term30Power, Colors.red),
       _Wire('Starter', 'LightSwitch', term30Power, term30Power, Colors.red),
       _Wire('Starter', 'TurnSignalSwitch', term30Power, term30Power, Colors.red),
+      _Wire('Starter', 'DomeLight', domePower, domePower, Colors.red),
+      _Wire('Starter', 'Radio', radioPower, radioPower, Colors.red),
       _Wire('Battery', 'Regulator', term30Power, chargingPower, Colors.red), // B+
       
       // Charging System
@@ -195,13 +227,22 @@ class SchematicPainter extends CustomPainter {
       // Ignition System (Terminal 15 & 50)
       _Wire('IgnitionSwitch', 'Starter', term50Power, term50Power, Colors.orange), // Term 50 (Cranking)
       _Wire('IgnitionSwitch', 'Coil', term15Power, term15Power, Colors.black), // Term 15 (Ignition ON)
+      _Wire('IgnitionSwitch', 'FuseBox', term15Power, term15Power, Colors.blue), // To fuses for accessories
       _Wire('Coil', 'Distributor', term15Power, sparkPower, Colors.green), // Term 1 (Points)
       _Wire('Distributor', 'SparkPlugs', sparkPower, sparkPower, Colors.blue, thickness: 4.0, isSpark: true), // High Tension
       
       // Lighting System
       _Wire('LightSwitch', 'FuseBox', lightsPower, lightsPower, Colors.grey.shade300),
+      _Wire('LightSwitch', 'ParkingLights', parkingPower, parkingPower, Colors.amber),
       _Wire('FuseBox', 'Headlights', lightsPower, lightsPower, Colors.yellow),
       _Wire('FuseBox', 'Taillights', lightsPower, lightsPower, Colors.grey),
+      
+      // Interior Lighting
+      _Wire('FuseBox', 'DomeLight', domePower, domePower, Colors.white70),
+      
+      // Radio System
+      _Wire('FuseBox', 'Radio', radioPower, radioPower, Colors.green.shade400),
+      _Wire('Radio', 'Speaker', radioPower, radioPower, Colors.grey.shade400),
       
       // Turn Signal System
       _Wire('TurnSignalSwitch', 'TurnSignalRelay', turnSignalPower, turnSignalPower, Colors.purple.shade300),
@@ -235,6 +276,14 @@ class SchematicPainter extends CustomPainter {
     if (lightsPower) {
       _drawLightEffect(canvas, nodes['Headlights']!.position, Colors.yellow);
       _drawLightEffect(canvas, nodes['Taillights']!.position, Colors.red);
+    }
+
+    if (parkingPower) {
+      _drawLightEffect(canvas, nodes['ParkingLights']!.position, Colors.amber);
+    }
+
+    if (domePower) {
+      _drawLightEffect(canvas, nodes['DomeLight']!.position, Colors.white);
     }
 
     // Draw Turn Signal Flashing
@@ -396,7 +445,9 @@ class SchematicPainter extends CustomPainter {
            oldDelegate.isLightSwitchOn != isLightSwitchOn ||
            oldDelegate.isEngineRunning != isEngineRunning ||
            oldDelegate.turnSignalState != turnSignalState ||
-           oldDelegate.isHazardOn != isHazardOn;
+           oldDelegate.isHazardOn != isHazardOn ||
+           oldDelegate.isParkingLightsOn != isParkingLightsOn ||
+           oldDelegate.isDomeLightOn != isDomeLightOn;
   }
 }
 
