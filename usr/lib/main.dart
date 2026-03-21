@@ -217,14 +217,14 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - Provides 12V DC power to the entire system.
 - Connected to chassis ground.
 - When engine runs, charges via alternator (upgraded for 1600cc engine).
-- Voltage: ${isBatteryConnected ? (isEngineRunning ? '14.2V (Charging)' : '12.6V') : '0.0V'}'';
+- Voltage: \${isBatteryConnected ? (isEngineRunning ? '14.2V (Charging)' : '12.6V') : '0.0V'}''';
         break;
       case 'Ground':
         details = '''Chassis Ground
 
 - Common return path for all electrical circuits.
 - Connected to vehicle frame/body.
-- Ensures safe current flow back to battery negative terminal.'';
+- Ensures safe current flow back to battery negative terminal.''';
         break;
       case 'Starter':
         details = '''Starter Motor (12V Upgraded)
@@ -232,14 +232,14 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - High-current motor cranks the 1600cc engine.
 - Term 30: Always hot (12V from battery).
 - Term 50: Only hot during START (solenoid engages).
-- Draws ~200A during cranking.'';
+- Draws ~200A during cranking.''';
         break;
       case 'Regulator':
         details = '''Voltage Regulator
 
 - Controls alternator output to prevent overcharging.
 - Maintains ~14.2V charging voltage.
-- Upgraded for 12V system and 1600cc engine load.'';
+- Upgraded for 12V system and 1600cc engine load.''';
         break;
       case 'Generator':
         details = '''Alternator (Upgraded 12V/55A)
@@ -248,7 +248,7 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - Produces AC, converts to DC via rectifier.
 - D+ (Sense): Tells regulator when to charge.
 - DF (Field): Excitation current from regulator.
-- Output: 55A at 1600cc idle speed.'';
+- Output: 55A at 1600cc idle speed.''';
         break;
       case 'IgnitionSwitch':
         details = '''Ignition Switch
@@ -256,21 +256,21 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - 3-Position: OFF/ON/START.
 - Term 30: Always hot (12V from battery).
 - Term 15: Hot when ON (powers accessories).
-- Term 50: Hot when START (cranks engine).'';
+- Term 50: Hot when START (cranks engine).''';
         break;
       case 'LightSwitch':
         details = '''Light Switch
 
 - Controls headlights and taillights.
 - Term 30: Always hot.
-- Term 56: Hot when switch ON (12V to lights).'';
+- Term 56: Hot when switch ON (12V to lights).''';
         break;
       case 'FuseBox':
         details = '''Fuse Box
 
 - Protects circuits from overload.
 - Contains fuses for lights, ignition, etc.
-- 12V input from light switch, distributed to bulbs.'';
+- 12V input from light switch, distributed to bulbs.''';
         break;
       case 'Coil':
         details = '''Ignition Coil (12V Upgraded)
@@ -278,7 +278,7 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - Steps up 12V to ~25,000V for spark plugs.
 - Term 15: 12V when ignition ON.
 - Term 1: Grounded by points in distributor.
-- Dual-port coil for improved 1600cc performance.'';
+- Dual-port coil for improved 1600cc performance.''';
         break;
       case 'Distributor':
         details = '''Distributor
@@ -286,7 +286,7 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - Distributes high-voltage to spark plugs.
 - Contains points (breaker) and rotor.
 - Timing advances with engine speed.
-- 4-cylinder for 1600cc engine.'';
+- 4-cylinder for 1600cc engine.''';
         break;
       case 'SparkPlugs':
         details = '''Spark Plugs (4 Cylinders)
@@ -294,21 +294,21 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - Ignite air-fuel mixture in 1600cc engine.
 - Receive ~25kV from distributor.
 - Gap: 0.025" for optimal performance.
-- Sparks when points open (Term 1 grounded).'';
+- Sparks when points open (Term 1 grounded).''';
         break;
       case 'Headlights':
         details = '''Headlights
 
 - Dual 12V/55W bulbs (high/low beam).
 - Powered via fuse box when lights ON.
-- Draw ~5A each at 12V.'';
+- Draw ~5A each at 12V.''';
         break;
       case 'Taillights':
         details = '''Taillights
 
 - Combined brake/tail lights.
 - 12V bulbs, powered same as headlights.
-- Also include license plate light.'';
+- Also include license plate light.''';
         break;
       case 'ParkingLights':
         details = '''Parking Lights
@@ -316,7 +316,7 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - Amber 12V bulbs on front fenders.
 - Separate from headlights, can be on independently.
 - Powered directly from light switch.
-- Draw ~2A total at 12V.'';
+- Draw ~2A total at 12V.''';
         break;
       case 'DomeLight':
         details = '''Interior Dome Light
@@ -324,7 +324,7 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - 12V bulb in headliner.
 - Typically door-activated, but here manual switch.
 - Powers from ignition accessory circuit.
-- Provides cabin illumination.'';
+- Provides cabin illumination.''';
         break;
       case 'Radio':
         details = '''Sapphire I Radio
@@ -332,7 +332,7 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - Vintage AM radio with integrated speaker.
 - 12V powered from ignition accessory.
 - Grounded to chassis.
-- Plays through built-in speaker.'';
+- Plays through built-in speaker.''';
         break;
       case 'Speaker':
         details = '''Radio Speaker
@@ -340,7 +340,7 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - 4-ohm speaker integrated with Sapphire I radio.
 - Receives audio signal from radio.
 - Grounded to chassis.
-- Provides sound output.'';
+- Provides sound output.''';
         break;
       case 'TurnSignalRelay':
         details = '''Turn Signal Flasher Relay
@@ -348,28 +348,28 @@ class _MainSimulatorScreenState extends State<MainSimulatorScreen> {
 - Thermal flasher interrupts current.
 - Flashes ~1.5 times/second.
 - Powers left/right turn signals or hazard lights.
-- Grounds through switch to complete circuit.'';
+- Grounds through switch to complete circuit.''';
         break;
       case 'TurnSignalSwitch':
         details = '''Turn Signal Switch
 
 - 3-Position: Left/Off/Right.
 - Routes 12V to appropriate relay terminals.
-- Also activates dash indicator lights.'';
+- Also activates dash indicator lights.''';
         break;
       case 'LeftTurnSignals':
         details = '''Left Turn Signals
 
 - Amber 12V bulbs in front/rear.
 - Flash via relay when switch set to LEFT.
-- Also active during hazard mode.'';
+- Also active during hazard mode.''';
         break;
       case 'RightTurnSignals':
         details = '''Right Turn Signals
 
 - Amber 12V bulbs in front/rear.
 - Flash via relay when switch set to RIGHT.
-- Also active during hazard mode.'';
+- Also active during hazard mode.''';
         break;
       default:
         details = 'Component details not available.';
